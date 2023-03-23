@@ -1,0 +1,11 @@
+This is a program intended to be used in a personal capacity to clean your gmail.
+
+I personally have a problem where I am on some sort of spam list that sends me 3-10 emails per day for someone named "Grace" that contain just a single image. There is no good way to filter these directly in gmail.
+
+Well, I know python and I have a Raspberry Pi so I guess I can just write a script to clean my gmail occasionally
+
+As most of my small projects nowadays I use an ai chatbot for the coding assist (who even wants to look up API details?) I'm going to keep track of them here.
+* Setup
+  #+begin_src emacs-lisp :results silent
+  (async-shell-command "pyenv exec poetry install")
+  #+end_src
