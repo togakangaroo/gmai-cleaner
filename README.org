@@ -165,6 +165,8 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
 
 ** Final script
   
+   The below will be written to [[./clean_gmail.py]]
+   
    #+begin_src python :tangle clean_gmail.py :eval no :noweb yes
   import time
   import re
