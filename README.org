@@ -12,7 +12,7 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
 * Code
   :PROPERTIES:
   :header-args:python: :python "pyenv exec poetry run python"
-  :header-args:python+: :noweb strip-export :comments link
+  :header-args:python+: :noweb strip-exports :comments link
   :END:
   
 ** Playground
@@ -165,7 +165,7 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
 
 ** Final script
   
-   #+begin_src python :tangle clean_gmail.py :eval no
+   #+begin_src python :tangle clean_gmail.py :eval no :noweb yes
   import time
   import re
   from datetime import datetime, timedelta
