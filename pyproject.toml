@@ -9,6 +9,8 @@ license = "MIT"
 python = "^3.9"
 google-api-python-client = "^2.82.0"
 google-auth = "^2.16.2"
+google-auth-oauthlib = "^1.0.0"
+google-auth-httplib2 = "^0.1.0"
 
 [tool.poetry.dev-dependencies]
 ipython = "^8.11.0"

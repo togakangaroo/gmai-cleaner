@@ -9,3 +9,59 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
   #+begin_src emacs-lisp :results silent
   (async-shell-command "pyenv exec poetry install")
   #+end_src
+* Playground
+  :PROPERTIES:
+  :header-args:python: :python "pyenv exec poetry run python"
+  :header-args:python+: :session gmail-cleaner
+  :END:
+  
+  Can all the things from the ai-generated script even be imported?
+  #+begin_src python
+  import os
+  import base64
+  from datetime import datetime, timedelta
+  from google.oauth2.credentials import Credentials
+  from googleapiclient.errors import HttpError
+  from googleapiclient.discovery import build
+  import google.oauth2
+  import jso
+  #+end_src
+
+#+RESULTS:
+
+Ok good
+
+Now lets try this out
+#+begin_src python
+  creds = None
+  with open('./.credentials/client_secret_771558906441-g8v6oelvom1hdf1uh92cqivegrpdp6db.apps.googleusercontent.com.json', 'r') as json_file:
+      data = json.load(json_file)
+      client_id = data['installed']['client_id']
+      client_secret = data['installed']['client_secret']
+      creds = google.oauth2.credentials.Credentials.from_authorized_user_info(info={"client_id": client_id, "client_secret": client_secret})
+  
+  service = build('gmail', 'v1', credentials=creds)
+  
+  today = datetime.today()
+  last_week = today - timedelta(days=7)
+  query = 'is:unread after:{} before:{} has:attachment'.format(last_week.strftime('%Y/%m/%d'), today.strftime('%Y/%m/%d'))
+  
+  try:
+      # Search for the emails
+      response = service.users().messages().list(userId='me', q=query).execute()
+      messages = []
+      if 'messages' in response:
+          messages.extend(response['messages'])
+  
+      # Process the emails
+      for message in messages:
+          msg = service.users().messages().get(userId='me', id=message['id']).execute()
+          if len(msg['payload']['parts']) == 1 and msg['payload']['parts'][0]['filename'] and msg['payload']['parts'][0]['mimeType'].startswith('image'):
+              # Move the email to spam
+              modify_msg = {'removeLabelIds': ['INBOX'], 'addLabelIds': ['SPAM']}
+              service.users().messages().modify(userId='me', id=message['id'], body=modify_msg).execute()
+              print('Moved message with id: {} to spam'.format(message['id']))
+  except HttpError as error:
+      print('An error occurred: {}'.format(error))
+  `
+#+end_src
