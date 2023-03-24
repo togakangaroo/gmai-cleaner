@@ -33,35 +33,46 @@ Ok good
 
 Now lets try this out
 #+begin_src python
-  creds = None
-  with open('./.credentials/client_secret_771558906441-g8v6oelvom1hdf1uh92cqivegrpdp6db.apps.googleusercontent.com.json', 'r') as json_file:
-      data = json.load(json_file)
-      client_id = data['installed']['client_id']
-      client_secret = data['installed']['client_secret']
-      creds = google.oauth2.credentials.Credentials.from_authorized_user_info(info={"client_id": client_id, "client_secret": client_secret})
+  import os
+  import google_auth_oauthlib.flow
   
-  service = build('gmail', 'v1', credentials=creds)
+  os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+  
+  client_secret_file = '.credentials/client_secret_771558906441-rt222sgbqf9rdresq9jebuj9gqqeh6i6.apps.googleusercontent.com.json'
+  scopes = ['https://www.googleapis.com/auth/gmail.modify']
+  
+  flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(client_secret_file, scopes)
+  credentials = flow.run_local_server(port=0)
+  
+  print(f'Access Token: {credentials.token}')
+  print(f'Refresh Token: {credentials.refresh_token}')
+  print(credentials)
+#+end_src
+
+#+RESULTS:
+: None
+
+#+begin_src python
+  service = build('gmail', 'v1', credentials=credentials)
   
   today = datetime.today()
   last_week = today - timedelta(days=7)
   query = 'is:unread after:{} before:{} has:attachment'.format(last_week.strftime('%Y/%m/%d'), today.strftime('%Y/%m/%d'))
   
-  try:
-      # Search for the emails
-      response = service.users().messages().list(userId='me', q=query).execute()
-      messages = []
-      if 'messages' in response:
-          messages.extend(response['messages'])
+  # Search for the emails
+  response = service.users().messages().list(userId='me', q=query).execute()
+  messages = []
+  if 'messages' in response:
+      messages.extend(response['messages'])
   
-      # Process the emails
-      for message in messages:
-          msg = service.users().messages().get(userId='me', id=message['id']).execute()
-          if len(msg['payload']['parts']) == 1 and msg['payload']['parts'][0]['filename'] and msg['payload']['parts'][0]['mimeType'].startswith('image'):
-              # Move the email to spam
-              modify_msg = {'removeLabelIds': ['INBOX'], 'addLabelIds': ['SPAM']}
-              service.users().messages().modify(userId='me', id=message['id'], body=modify_msg).execute()
-              print('Moved message with id: {} to spam'.format(message['id']))
-  except HttpError as error:
-      print('An error occurred: {}'.format(error))
-  `
+  # # Process the emails
+  # for message in messages:
+  #     msg = service.users().messages().get(userId='me', id=message['id']).execute()
+  #     if len(msg['payload']['parts']) == 1 and msg['payload']['parts'][0]['filename'] and msg['payload']['parts'][0]['mimeType'].startswith('image'):
+  #         # Move the email to spam
+  #         modify_msg = {'removeLabelIds': ['INBOX'], 'addLabelIds': ['SPAM']}
+  #         service.users().messages().modify(userId='me', id=message['id'], body=modify_msg).execute()
+  #         print('Moved message with id: {} to spam'.format(message['id']))
 #+end_src
+
+#+RESULTS:
