@@ -16,7 +16,7 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
   :END:
   
   Can all the things from the ai-generated script even be imported?
-  #+begin_src python
+  #+begin_src python :results silent
   import os
   import base64
   from datetime import datetime, timedelta
@@ -24,10 +24,8 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
   from googleapiclient.errors import HttpError
   from googleapiclient.discovery import build
   import google.oauth2
-  import jso
+  import json
   #+end_src
-
-#+RESULTS:
 
 Ok good
 
