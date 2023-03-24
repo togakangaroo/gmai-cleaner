@@ -32,7 +32,7 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
 Ok good
 
 Now lets try this out
-#+begin_src python
+#+begin_src python :results silent
   import os
   import google_auth_oauthlib.flow
   
@@ -43,14 +43,8 @@ Now lets try this out
   
   flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(client_secret_file, scopes)
   credentials = flow.run_local_server(port=0)
-  
-  print(f'Access Token: {credentials.token}')
-  print(f'Refresh Token: {credentials.refresh_token}')
-  print(credentials)
 #+end_src
 
-#+RESULTS:
-: None
 
 #+begin_src python
   service = build('gmail', 'v1', credentials=credentials)
@@ -59,20 +53,12 @@ Now lets try this out
   last_week = today - timedelta(days=7)
   query = 'is:unread after:{} before:{} has:attachment'.format(last_week.strftime('%Y/%m/%d'), today.strftime('%Y/%m/%d'))
   
-  # Search for the emails
   response = service.users().messages().list(userId='me', q=query).execute()
-  messages = []
-  if 'messages' in response:
-      messages.extend(response['messages'])
+  messages = response.get('messages', None)
   
-  # # Process the emails
-  # for message in messages:
-  #     msg = service.users().messages().get(userId='me', id=message['id']).execute()
-  #     if len(msg['payload']['parts']) == 1 and msg['payload']['parts'][0]['filename'] and msg['payload']['parts'][0]['mimeType'].startswith('image'):
-  #         # Move the email to spam
-  #         modify_msg = {'removeLabelIds': ['INBOX'], 'addLabelIds': ['SPAM']}
-  #         service.users().messages().modify(userId='me', id=message['id'], body=modify_msg).execute()
-  #         print('Moved message with id: {} to spam'.format(message['id']))
+  msg = service.users().messages().get(userId='me', id=message['id']).execute()
+  msg['snippet']
 #+end_src
 
 #+RESULTS:
+: Ihor Radchenko &lt;yantar92@posteo.net&gt; writes: &gt; Nathaniel Nicandro &lt;nathanielnicandro@gmail.com&gt; writes: &gt; &gt;&gt; I would like to submit a patch that adds support for logind to &gt;
