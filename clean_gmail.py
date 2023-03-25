@@ -3,7 +3,7 @@ import time
 import re
 from datetime import datetime, timedelta
 from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
+from googleapiclient.discovery import buildhttps://github.com/togakangaroo/gmai-cleaner
 
 credentials = Credentials.from_authorized_user_file('./.credentials/gmauer-credentials.json')
 service = build('gmail', 'v1', credentials=credentials)
