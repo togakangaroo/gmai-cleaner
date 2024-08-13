@@ -172,7 +172,7 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
   import re
   from datetime import datetime, timedelta
   from google.oauth2.credentials import Credentials
-  from googleapiclient.discovery import buildhttps://github.com/togakangaroo/gmai-cleaner
+  from googleapiclient.discovery import build
   
   credentials = Credentials.from_authorized_user_file('./.credentials/gmauer-credentials.json')
   service = build('gmail', 'v1', credentials=credentials)
@@ -195,9 +195,11 @@ And we can test it locally really quick
 
 I moved this directory onto my raspberry pi server and set a crontab
 
-#+begin_src shell :dir /ssh:192.168.1.6:/home/gmauer/code/gmail-cleaner
+#+begin_src shell :dir /ssh:gmauer@192.168.1.6:/home/gmauer/code/gmail-cleaner
   crontab -l | grep clean_gmail
 #+end_src
 
 #+RESULTS:
-: 20 */3 * * * cd /home/gmauer/code/gmail-cleaner && /usr/bin/python -m poetry run python clean_gmail.py >> /home/gmauer/clean_gmail.log 2>&1
+
+
+[[/ssh:gmauer@192.168.1.6:/home/gmauer/clean_gmail.log][Here's the log]]
