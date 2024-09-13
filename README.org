@@ -21,6 +21,7 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
    :END:
   
    Can all the things from the ai-generated script even be imported?
+   #+name: playground/all-imports
    #+begin_src python :results silent
    import os
    import base64
@@ -35,6 +36,7 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
  Ok good
 
  Now lets try this out
+   #+name: playground/authenticate
  #+begin_src python :results silent
    import os
    import google_auth_oauthlib.flow
@@ -148,6 +150,7 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
 
  The only thing remaining is that the credentials in this case are in-memory, not in a file. Lets write them out there
 
+#+name: playground/save-credentials 
  #+begin_src python :results silent
    with open('./.credentials/gmauer-credentials.json', 'w') as fd:
        fd.write(credentials.to_json())
@@ -191,6 +194,69 @@ And we can test it locally really quick
   (async-shell-command "pyenv exec poetry run python ./clean_gmail.py")
 #+end_src
 
+** Troubleshooting - Credentials out of date
+Lets look at the last few lines of the log
+
+#+begin_src shell :dir /ssh:gmauer@192.168.1.6:/home/gmauer/ :results raw drawer
+  tail -n 20 ~/clean_gmail.log
+#+end_src
+
+#+RESULTS:
+:results:
+  File "/home/gmauer/code/gmail-cleaner/clean_gmail.py", line 15, in messages_to_spam
+    response = service.users().messages().list(userId='me', q=query).execute()
+  File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/googleapiclient/_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+  File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/googleapiclient/http.py", line 923, in execute
+    resp, content = _retry_request(
+  File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/googleapiclient/http.py", line 191, in _retry_request
+    resp, content = http.request(uri, method, *args, **kwargs)
+  File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/google_auth_httplib2.py", line 209, in request
+    self.credentials.before_request(self._request, method, uri, request_headers)
+  File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/google/auth/credentials.py", line 135, in before_request
+    self.refresh(request)
+  File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/google/oauth2/credentials.py", line 335, in refresh
+    ) = reauth.refresh_grant(
+  File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/google/oauth2/reauth.py", line 349, in refresh_grant
+    _client._handle_error_response(response_data, retryable_error)
+  File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/google/oauth2/_client.py", line 69, in _handle_error_response
+    raise exceptions.RefreshError(
+google.auth.exceptions.RefreshError: ('invalid_grant: Bad Request', {'error': 'invalid_grant', 'error_description': 'Bad Request'})
+Done in 15.410001993179321
+:end:
+
+If the above is an error with something like
+#+begin_quote
+google.auth.exceptions.RefreshError: ('invalid_grant: Bad Request', {'error': 'invalid_grant', 'error_description': 'Bad Request'})
+#+end_quote
+
+ then we need new credentials. Run this and click through till it says auth flow is done
+
+ #+begin_src python :noweb yes :results silent
+   <<playground/all-imports>>
+   <<playground/authenticate>>
+   <<playground/save-credentials>>
+ #+end_src
+
+Then copy things to the pi
+
+#+begin_src emacs-lisp 
+  (let ((target-dir "/ssh:gmauer@192.168.1.6:/home/gmauer/code/gmail-cleaner"))
+    (copy-directory ".credentials" target-dir t)
+    (copy-file "clean_gmail.py" target-dir)
+    (copy-file "poetry.lock" target-dir)
+    (copy-file "pyproject.toml" target-dir)
+    (copy-file "README.org" target-dir))
+#+end_src
+
+lets try to run it once ont he server
+
+#+begin_src shell :dir /ssh:gmauer@192.168.1.6:/home/gmauer/code/gmail-cleaner
+  cd /home/gmauer/code/gmail-cleaner && /usr/bin/python -m poetry run python clean_gmail.py >> /home/gmauer/clean_gmail.log 2>&1
+#+end_src
+
+#+RESULTS:
+
 * Deployment
 
 I moved this directory onto my raspberry pi server and set a crontab
@@ -200,6 +266,8 @@ I moved this directory onto my raspberry pi server and set a crontab
 #+end_src
 
 #+RESULTS:
+: 20 */3 * * * cd /home/gmauer/code/gmail-cleaner && /usr/bin/python -m poetry run python clean_gmail.py >> /home/gmauer/clean_gmail.log 2>&1
 
 
 [[/ssh:gmauer@192.168.1.6:/home/gmauer/clean_gmail.log][Here's the log]]
+
