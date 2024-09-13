@@ -64,7 +64,7 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
  #+end_src
 
  #+RESULTS:
- : Ihor Radchenko &lt;yantar92@posteo.net&gt; writes: &gt; Nathaniel Nicandro &lt;nathanielnicandro@gmail.com&gt; writes: &gt; &gt;&gt; I would like to submit a patch that adds support for logind to &gt;
+ : Now I found this, a roll dice with hydra interface 4:39 and many more ideas: https://emacsconf.org/2023/talks/solo/
 
  Searching for the offending grace emails
 
@@ -172,7 +172,7 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
   import re
   from datetime import datetime, timedelta
   from google.oauth2.credentials import Credentials
-  from googleapiclient.discovery import buildhttps://github.com/togakangaroo/gmai-cleaner
+  from googleapiclient.discovery import build
   
   credentials = Credentials.from_authorized_user_file('./.credentials/gmauer-credentials.json')
   service = build('gmail', 'v1', credentials=credentials)
