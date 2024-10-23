@@ -9,6 +9,18 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
   #+begin_src emacs-lisp :results silent
   (async-shell-command "pyenv exec poetry install")
   #+end_src
+
+I've set up a GCP project for this. I can [[https://console.cloud.google.com/apis/credentials?project=gmail-cleaner-381601][download the client secret file here]] then
+#+begin_src shell 
+  mv ~/Downloads/client_secret_771558906441-rt222sgbqf9rdresq9jebuj9gqqeh6i6.apps.googleusercontent.com.json ./.credentials/
+  ls -l .credentials
+#+end_src
+
+#+RESULTS:
+| total      | 8 |        |        |     |     |    |       |                                                                                             |
+| -rw-r--r-- | 1 | gmauer | gmauer | 409 | Oct | 23 | 12:27 | client_secret_771558906441-rt222sgbqf9rdresq9jebuj9gqqeh6i6.apps.googleusercontent.com.json |
+| -rw-rw-r-- | 1 | gmauer | gmauer |  95 | Oct | 23 | 10:16 | README.md                                                                                   |
+
 * Code
   :PROPERTIES:
   :header-args:python: :python "pyenv exec poetry run python"
@@ -249,7 +261,7 @@ Then copy things to the pi
     (copy-file "README.org" target-dir))
 #+end_src
 
-lets try to run it once ont he server
+lets try to run it once on the server
 
 #+begin_src shell :dir /ssh:gmauer@192.168.1.6:/home/gmauer/code/gmail-cleaner
   cd /home/gmauer/code/gmail-cleaner && /usr/bin/python -m poetry run python clean_gmail.py >> /home/gmauer/clean_gmail.log 2>&1
