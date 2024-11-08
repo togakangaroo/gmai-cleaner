@@ -8,6 +8,14 @@ from googleapiclient.discovery import build
 credentials = Credentials.from_authorized_user_file('./.credentials/gmauer-credentials.json')
 service = build('gmail', 'v1', credentials=credentials)
 
+def header_indicates_evil_email(h):
+   if not h['name'] in ('To', 'CC'):
+      return False
+   if re.search(r'\bGrace\w*@', h['value'], re.IGNORECASE ):
+      return True
+   if re.search(r'\bGregory\w*@', h['value'], re.IGNORECASE ):
+      return True
+
 def messages_to_spam():
    today = datetime.today()
    search_window = today - timedelta(days=2)
@@ -17,8 +25,7 @@ def messages_to_spam():
    for message in response.get('messages', []):
       message_data = service.users().messages().get(userId='me', id=message['id']).execute()
       if any((1 for h in message_data.get('payload', {}).get('headers', [])
-            if h['name'] in ('To', 'CC') \
-              and re.search(r'\bGrace\w*@', h['value'], re.IGNORECASE ) )) \
+            if header_indicates_evil_email(h) )) \
               and not message_data.get('payload', {}).get('body', {}).get('size', 0):
          yield message_data
 
