@@ -1,9 +1,14 @@
 # [[file:README.org::*Final script][Final script:1]]
 import time
 import re
+import logging
+import os
 from datetime import datetime, timedelta
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+
+log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
 
 credentials = Credentials.from_authorized_user_file('./.credentials/gmauer-credentials.json')
 service = build('gmail', 'v1', credentials=credentials)
@@ -36,5 +41,5 @@ for message_data in messages_to_spam():
     print(f'Modifying message {message_data["id"]}')
     service.users().messages().modify(userId='me', id=message_data['id'], body=modification).execute()
 
-print(f'Done in {time.time() - start_time}')
+logging.info(f'Done in {time.time() - start_time}')
 # Final script:1 ends here

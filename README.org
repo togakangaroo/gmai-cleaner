@@ -13,27 +13,27 @@ As most of my small projects nowadays I use an ai chatbot for the coding assist 
   #+end_src
 
 I've set up a GCP project for this. I can [[https://console.cloud.google.com/apis/credentials?project=gmail-cleaner-381601][download the client secret file here]] then
-#+begin_src shell 
+#+begin_src shell :results verbatim
   mv ~/Downloads/client_secret_771558906441-rt222sgbqf9rdresq9jebuj9gqqeh6i6.apps.googleusercontent.com.json ./.credentials/
   ls -l .credentials
 #+end_src
 
 #+RESULTS:
-| total      | 8 |        |        |     |     |    |       |                                                                                             |
-| -rw-r--r-- | 1 | gmauer | gmauer | 409 | Oct | 23 | 12:27 | client_secret_771558906441-rt222sgbqf9rdresq9jebuj9gqqeh6i6.apps.googleusercontent.com.json |
-| -rw-rw-r-- | 1 | gmauer | gmauer |  95 | Oct | 23 | 10:16 | README.md                                                                                   |
+: total 8
+: -rw-r--r-- 1 gmauer gmauer 409 Nov 22 17:13 client_secret_771558906441-rt222sgbqf9rdresq9jebuj9gqqeh6i6.apps.googleusercontent.com.json
+: -rw-rw-r-- 1 gmauer gmauer  95 Nov 22 17:13 README.md
 
 * Code
   :PROPERTIES:
   :header-args:python: :python "pyenv exec poetry run python"
   :header-args:python+: :noweb strip-exports :comments link
   :END:
-  
+
 ** Playground
    :PROPERTIES:
    :header-args:python+: :session gmail-cleaner
    :END:
-  
+
    Can all the things from the ai-generated script even be imported?
    #+name: playground/all-imports
    #+begin_src python :results silent
@@ -54,12 +54,12 @@ I've set up a GCP project for this. I can [[https://console.cloud.google.com/api
  #+begin_src python :results silent
    import os
    import google_auth_oauthlib.flow
-  
+
    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-  
+
    client_secret_file = '.credentials/client_secret_771558906441-rt222sgbqf9rdresq9jebuj9gqqeh6i6.apps.googleusercontent.com.json'
    scopes = ['https://www.googleapis.com/auth/gmail.modify']
-  
+
    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(client_secret_file, scopes)
    credentials = flow.run_local_server(port=0)
  #+end_src
@@ -67,11 +67,11 @@ I've set up a GCP project for this. I can [[https://console.cloud.google.com/api
 
  #+begin_src python
    service = build('gmail', 'v1', credentials=credentials)
-  
+
    today = datetime.today()
    search_window = today - timedelta(days=7)
    query = 'is:unread after:{} before:{} has:attachment'.format(search_window.strftime('%Y/%m/%d'), today.strftime('%Y/%m/%d'))
-  
+
    response = service.users().messages().list(userId='me', q=query).execute()
    messages = response.get('messages', [])
    message = messages[0]
@@ -88,7 +88,7 @@ I've set up a GCP project for this. I can [[https://console.cloud.google.com/api
    service = build('gmail', 'v1', credentials=credentials)
    search_window = today - timedelta(days=7)
    query = f'after:{search_window.strftime("%Y-%m-%d")} from:email_jl5aqQ4RC1w@rjmjhwxoanxdnbxcpydnynyvblpsok.ieedse.com'
-  
+
    response = service.users().messages().list(userId='me', q=query).execute()
    messages = response.get('messages', None)
    message = messages[0]
@@ -134,9 +134,9 @@ I've set up a GCP project for this. I can [[https://console.cloud.google.com/api
  #+begin_src python :results code
    import time
    start_time = time.time()
-  
+
    service = build('gmail', 'v1', credentials=credentials)
-  
+
    [next((h for h in message_data['payload']['headers'] if re.match(r'^subject$', h['name'], re.IGNORECASE)), 'no subject>>')
     for message_data in messages_to_spam()], ("execution time", str(time.time()-start_time))
  #+end_src
@@ -167,11 +167,11 @@ I've set up a GCP project for this. I can [[https://console.cloud.google.com/api
  #+RESULTS:
  | execution time | 402.5851867198944 |
 
- That worked - I got the execution time wrong but it seemed to take about a minute 
+ That worked - I got the execution time wrong but it seemed to take about a minute
 
  The only thing remaining is that the credentials in this case are in-memory, not in a file. Lets write them out there
 
-#+name: playground/save-credentials 
+#+name: playground/save-credentials
  #+begin_src python :results silent
    with open('./.credentials/gmauer-credentials.json', 'w') as fd:
        fd.write(credentials.to_json())
@@ -188,26 +188,31 @@ I've set up a GCP project for this. I can [[https://console.cloud.google.com/api
  Yup they are
 
 ** Final script
-  
+
    The below will be written to [[./clean_gmail.py]]
-   
+
    #+begin_src python :tangle clean_gmail.py :eval no :noweb yes
-  import time
-  import re
-  from datetime import datetime, timedelta
-  from google.oauth2.credentials import Credentials
-  from googleapiclient.discovery import build
-  
-  credentials = Credentials.from_authorized_user_file('./.credentials/gmauer-credentials.json')
-  service = build('gmail', 'v1', credentials=credentials)
-  
-  <<def/messages_to_spam>>
-  
-  start_time = time.time()
-  
-  <<move-messages-to-spam>>
-  
-  print(f'Done in {time.time() - start_time}')
+     import time
+     import re
+     import logging
+     import os
+     from datetime import datetime, timedelta
+     from google.oauth2.credentials import Credentials
+     from googleapiclient.discovery import build
+
+     log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+     logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
+
+     credentials = Credentials.from_authorized_user_file('./.credentials/gmauer-credentials.json')
+     service = build('gmail', 'v1', credentials=credentials)
+
+     <<def/messages_to_spam>>
+
+     start_time = time.time()
+
+     <<move-messages-to-spam>>
+
+     logging.info(f'Done in {time.time() - start_time}')
    #+end_src
 
 And we can test it locally really quick
@@ -224,10 +229,6 @@ Lets look at the last few lines of the log
 
 #+RESULTS:
 :results:
-  File "/home/gmauer/code/gmail-cleaner/clean_gmail.py", line 15, in messages_to_spam
-    response = service.users().messages().list(userId='me', q=query).execute()
-  File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/googleapiclient/_helpers.py", line 130, in positional_wrapper
-    return wrapped(*args, **kwargs)
   File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/googleapiclient/http.py", line 923, in execute
     resp, content = _retry_request(
   File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/googleapiclient/http.py", line 191, in _retry_request
@@ -259,15 +260,19 @@ google.auth.exceptions.RefreshError: ('invalid_grant: Bad Request', {'error': 'i
    <<playground/save-credentials>>
  #+end_src
 
-Then copy things to the pi
+Then tangle and copy things to the pi
 
-#+begin_src emacs-lisp 
-  (let ((target-dir "/ssh:gmauer@192.168.1.6:/home/gmauer/code/gmail-cleaner"))
-    (copy-directory ".credentials" target-dir t)
-    (copy-file "clean_gmail.py" target-dir)
-    (copy-file "poetry.lock" target-dir)
-    (copy-file "pyproject.toml" target-dir)
-    (copy-file "README.org" target-dir))
+#+begin_src emacs-lisp :results silent
+  (require 's)
+  (org-babel-tangle)
+
+  (let* ((target-dir "/ssh:gmauer@10.0.0.6:/home/gmauer/code/gmail-cleaner/")
+         (credentials-target-dir (s-concat target-dir ".credentials")))
+    (delete-directory credentials-target-dir 't)
+    (copy-directory ".credentials" credentials-target-dir 't nil 't)
+    (copy-file "clean_gmail.py" target-dir 't)
+    (copy-file "poetry.lock" target-dir 't)
+    (copy-file "pyproject.toml" target-dir 't)
 #+end_src
 
 lets try to run it once on the server
