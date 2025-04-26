@@ -19,14 +19,16 @@ I've set up a GCP project for this. I can [[https://console.cloud.google.com/api
 #+end_src
 
 #+RESULTS:
-: total 8
-: -rw-r--r-- 1 gmauer gmauer 409 Nov 22 17:13 client_secret_771558906441-rt222sgbqf9rdresq9jebuj9gqqeh6i6.apps.googleusercontent.com.json
+: total 12
+: -rw-r--r-- 1 gmauer gmauer 409 Apr 26 10:36 client_secret_771558906441-rt222sgbqf9rdresq9jebuj9gqqeh6i6.apps.googleusercontent.com.json
+: -rw-rw-r-- 1 gmauer gmauer 657 Jan  7 22:20 gmauer-credentials.json
 : -rw-rw-r-- 1 gmauer gmauer  95 Nov 22 17:13 README.md
 
 * Code
   :PROPERTIES:
   :header-args:python: :python "pyenv exec poetry run python"
   :header-args:python+: :noweb strip-exports :comments link
+  :remote-address: 10.0.0.6
   :END:
 
 ** Playground
@@ -143,7 +145,7 @@ I've set up a GCP project for this. I can [[https://console.cloud.google.com/api
 
  #+RESULTS:
  #+begin_src python
- ([{'name': 'Subject', 'value': 'Doorbell video recording & free of installation &  up to 75% Off Now !!'}, {'name': 'Subject', 'value': '#FreeVideoDoorbell'}], ('execution time', '20.23447012901306'))
+ ([{'name': 'Subject', 'value': 'Your application invitation'}], ('execution time', '16.44367003440857'))
  #+end_src
 
  Ok, so lets try to delete those
@@ -223,12 +225,17 @@ And we can test it locally really quick
 ** Troubleshooting - Credentials out of date
 Lets look at the last few lines of the log
 
-#+begin_src shell :dir /ssh:gmauer@192.168.1.6:/home/gmauer/ :results raw drawer
+#+begin_src shell :dir (format "/ssh:gmauer@%s:/home/gmauer/" (org-entry-get (point) "remote-address" 't nil)) :results verbatim
   tail -n 20 ~/clean_gmail.log
 #+end_src
 
 #+RESULTS:
-:results:
+#+begin_example
+    for message_data in messages_to_spam():
+  File "/home/gmauer/code/gmail-cleaner/clean_gmail.py", line 28, in messages_to_spam
+    response = service.users().messages().list(userId='me', q=query).execute()
+  File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/googleapiclient/_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
   File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/googleapiclient/http.py", line 923, in execute
     resp, content = _retry_request(
   File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/googleapiclient/http.py", line 191, in _retry_request
@@ -244,8 +251,7 @@ Lets look at the last few lines of the log
   File "/home/gmauer/.cache/pypoetry/virtualenvs/gmail-cleaner-LW7y0gbX-py3.9/lib/python3.9/site-packages/google/oauth2/_client.py", line 69, in _handle_error_response
     raise exceptions.RefreshError(
 google.auth.exceptions.RefreshError: ('invalid_grant: Bad Request', {'error': 'invalid_grant', 'error_description': 'Bad Request'})
-Done in 15.410001993179321
-:end:
+#+end_example
 
 If the above is an error with something like
 #+begin_quote
@@ -260,28 +266,32 @@ google.auth.exceptions.RefreshError: ('invalid_grant: Bad Request', {'error': 'i
    <<playground/save-credentials>>
  #+end_src
 
-Then tangle and copy things to the pi
+Then tangle and run this to copy things to the pi
 
-#+begin_src emacs-lisp :results silent
+#+name: deploy
+#+begin_src emacs-lisp :results silent :var remote-address=(org-entry-get (point) "remote-address" 't nil)
   (require 's)
   (org-babel-tangle)
 
-  (let* ((target-dir "/ssh:gmauer@10.0.0.6:/home/gmauer/code/gmail-cleaner/")
+  (let* ((target-dir (format "/ssh:gmauer@%s:/home/gmauer/code/gmail-cleaner/" remote-address))
          (credentials-target-dir (s-concat target-dir ".credentials")))
     (delete-directory credentials-target-dir 't)
     (copy-directory ".credentials" credentials-target-dir 't nil 't)
     (copy-file "clean_gmail.py" target-dir 't)
     (copy-file "poetry.lock" target-dir 't)
     (copy-file "pyproject.toml" target-dir 't)
+    (copy-file "README.org" target-dir 't))
 #+end_src
 
 lets try to run it once on the server
 
-#+begin_src shell :dir /ssh:gmauer@192.168.1.6:/home/gmauer/code/gmail-cleaner
+#+begin_src shell :dir (format "/ssh:gmauer@%s:/home/gmauer/" (org-entry-get (point) "remote-address" 't nil)) :results verbatim
   cd /home/gmauer/code/gmail-cleaner && /usr/bin/python -m poetry run python clean_gmail.py >> /home/gmauer/clean_gmail.log 2>&1
 #+end_src
 
 #+RESULTS:
+
+
 
 * Deployment
 
@@ -296,4 +306,3 @@ I moved this directory onto my raspberry pi server and set a crontab
 
 
 [[/ssh:gmauer@192.168.1.6:/home/gmauer/clean_gmail.log][Here's the log]]
-

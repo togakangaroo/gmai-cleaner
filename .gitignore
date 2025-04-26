@@ -1,2 +1,3 @@
 /.credentials/**
 !/.credentials/README.md
+.aider*
